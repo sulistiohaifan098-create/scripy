@@ -1,8 +1,9 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local CoreGui = game:GetService("CoreGui")
-
 local player = Players.LocalPlayer
+
+-- Tunggu sampai PlayerGui siap
+local playerGui = player:WaitForChild("PlayerGui")
 
 getgenv().AutoSpectral = false
 
@@ -22,16 +23,21 @@ local areas = {
     {prefix = "ChainAbyss", name = "Chain Abyss"},
 }
 
--- Membuat UI & Label Status
+-- Hapus GUI lama jika ada agar tidak menumpuk
+if playerGui:FindFirstChild("MultiAreaAutoGui") then
+    playerGui.MultiAreaAutoGui:Destroy()
+end
+
+-- Membuat UI & Label Status (Langsung ke PlayerGui agar aman)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MultiAreaAutoGui"
 screenGui.ResetOnSpawn = false
-pcall(function() screenGui.Parent = CoreGui end)
-if not screenGui.Parent then screenGui.Parent = player:WaitForChild("PlayerGui") end
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 240, 0, 125)
-mainFrame.Position = UDim2.new(0.5, -120, 0.15, 0)
+mainFrame.Position = UDim2.new(0.5, -120, 0.2, 0) -- Di tengah agak ke atas
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -48,7 +54,6 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 11
 title.Parent = mainFrame
 
--- Label Status Teks di dalam UI
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -10, 0, 25)
 statusLabel.Position = UDim2.new(0, 5, 0, 25)
@@ -113,11 +118,9 @@ task.spawn(function()
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
             
             if hrp then
-                -- Perulangan untuk setiap Area di dalam list
                 for _, area in ipairs(areas) do
                     if not getgenv().AutoSpectral then break end
                     
-                    -- Asumsi tiap area memiliki 5 kunci & gembok (sesuai pola sebelumnya)
                     for i = 1, 5 do
                         if not getgenv().AutoSpectral then break end
                         
@@ -146,7 +149,6 @@ task.spawn(function()
                                     end)
                                 end
                                 
-                                -- Jeda 5 detik
                                 local elapsed = 0
                                 while elapsed < 5.0 do
                                     if not getgenv().AutoSpectral then break end
@@ -156,13 +158,13 @@ task.spawn(function()
                                 end
                             end
                         else
-                            statusLabel.Text = namaKunci. .." tdk ada!"
+                            statusLabel.Text = namaKunci .. " tdk ada!"
                             task.wait(1)
                         end
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- 2. PROSES PADLOCK (GEMBOK)
+                        -- 2. PROSES PADLOCK
                         statusLabel.Text = "[" .. area.name .. "] Cari: Padlock " .. i
                         local padlockObj = Workspace:FindFirstChild(namaPadlock, true)
                         
@@ -180,7 +182,6 @@ task.spawn(function()
                                     triggerInteraction(padlockObj)
                                 end
                                 
-                                -- Jeda 5 detik
                                 local elapsed = 0
                                 while elapsed < 5.0 do
                                     if not getgenv().AutoSpectral then break end
@@ -197,7 +198,6 @@ task.spawn(function()
                         if not getgenv().AutoSpectral then break end
                     end
                     
-                    -- 3. PROSES EXIT PORTAL TIAP AREA (Opsional jika ada)
                     if not getgenv().AutoSpectral then break end
                     local exitName = area.prefix .. "_ExitPortal"
                     statusLabel.Text = "Cari " .. exitName
@@ -216,7 +216,6 @@ task.spawn(function()
                                 triggerInteraction(exitObj)
                             end
                             
-                            -- Jeda portal (misal 5-10 detik untuk pindah area)
                             local elapsed = 0
                             while elapsed < 5.0 do
                                 if not getgenv().AutoSpectral then break end
@@ -228,7 +227,6 @@ task.spawn(function()
                     end
                 end
                 
-                -- Selesai semua area
                 getgenv().AutoSpectral = false
                 toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
                 toggleBtn.Text = "STATUS: OFF"
