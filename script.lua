@@ -16,7 +16,7 @@ local areas = {
     {prefix = "BellGallery", name = "Bell Gallery"},
     {prefix = "ClockGallery", name = "Clock Gallery"},
     {prefix = "RootGarden", name = "Root Garden"},
-    {prefix = "CoilLabyrinth", name = "Coil Labyrinth"},
+    {prefix = "CoilLabyrinth", name = "Coil Labyrinth"}, -- Mulai Stage 8
     {prefix = "WatchfulArchive", name = "Watchful Archive"},
     {prefix = "PrisonHeart", name = "Prison Heart"},
     {prefix = "LostSands", name = "Lost Sands"},
@@ -123,8 +123,11 @@ task.spawn(function()
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
             
             if hrp then
-                for _, area in ipairs(areas) do
+                for index, area in ipairs(areas) do
                     if not getgenv().AutoSpectral then break end
+                    
+                    -- Menentukan durasi jeda item berdasarkan stage (Index 1 sampai 7 = 2 detik, Index 8 ke atas = 5 detik)
+                    local delayItem = (index <= 7) and 2.0 or 5.0
                     
                     for i = 1, 5 do
                         if not getgenv().AutoSpectral then break end
@@ -132,11 +135,11 @@ task.spawn(function()
                         local namaKunci = area.prefix .. "_Key" .. i
                         local namaPadlock = area.prefix .. "_Padlock" .. i
                         
-                        -- 1. PROSES KUNCI (DENGAN SISTEM ULANG / RETRY)
+                        -- 1. PROSES KUNCI
                         local kunciBerhasil = false
                         local percobaanKunci = 0
                         
-                        while not kunciBerhasil and getgenv().AutoSpectral and percobaanKunci < 4 do
+                        while not kunciBerhasil and getgenv().AutoSpectral and percobaanKunci < 3 do
                             percobaanKunci = percobaanKunci + 1
                             statusLabel.Text = "[" .. area.name .. "] Key " .. i .. " (Coba " .. percobaanKunci .. ")"
                             
@@ -147,7 +150,7 @@ task.spawn(function()
                                     pcall(function()
                                         hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
                                     end)
-                                    task.wait(0.4)
+                                    task.wait(index <= 7 and 0.3 or 0.6)
                                     
                                     triggerInteraction(kunciObj)
                                     pcall(function()
@@ -156,11 +159,9 @@ task.spawn(function()
                                         firetouchinterest(hrp, kunciObj, 1)
                                     end)
                                     
-                                    -- Cek apakah objeknya masih ada (jika sudah hilang/diambil, berarti sukses)
                                     if not kunciObj.Parent or not kunciObj:IsDescendantOf(Workspace) then
                                         kunciBerhasil = true
                                     else
-                                        -- Jika masih ada, tunggu sebentar lalu coba lagi
                                         task.wait(0.5)
                                     end
                                 end
@@ -171,22 +172,22 @@ task.spawn(function()
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- Jeda 5 detik setelah kunci sukses/selesai dicoba
+                        -- Jeda dinamis (2 detik untuk stage 1-7, 5 detik untuk stage 8+)
                         local elapsed = 0
-                        while elapsed < 5.0 do
+                        while elapsed < delayItem do
                             if not getgenv().AutoSpectral then break end
-                            statusLabel.Text = "[" .. area.name .. "] Jeda Key " .. i .. " (" .. math.ceil(5.0 - elapsed) + 0 .. "s)"
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Key " .. i .. " (" .. math.ceil(delayItem - elapsed) .. "s)"
                             task.wait(0.1)
                             elapsed = elapsed + 0.1
                         end
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- 2. PROSES PADLOCK (DENGAN SISTEM ULANG / RETRY)
+                        -- 2. PROSES PADLOCK
                         local padlockBerhasil = false
                         local percobaanPadlock = 0
                         
-                        while not padlockBerhasil and getgenv().AutoSpectral and percobaanPadlock < 4 do
+                        while not padlockBerhasil and getgenv().AutoSpectral and percobaanPadlock < 3 do
                             percobaanPadlock = percobaanPadlock + 1
                             statusLabel.Text = "[" .. area.name .. "] Padlock " .. i .. " (Coba " .. percobaanPadlock .. ")"
                             
@@ -197,7 +198,7 @@ task.spawn(function()
                                     pcall(function()
                                         hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 3, 0))
                                     end)
-                                    task.wait(0.4)
+                                    task.wait(index <= 7 and 0.3 or 0.6)
                                     
                                     triggerInteraction(padlockObj)
                                     
@@ -214,11 +215,11 @@ task.spawn(function()
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- Jeda 5 detik setelah padlock selesai
+                        -- Jeda dinamis untuk padlock
                         elapsed = 0
-                        while elapsed < 5.0 do
+                        while elapsed < delayItem do
                             if not getgenv().AutoSpectral then break end
-                            statusLabel.Text = "[" .. area.name .. "] Jeda Padlock " .. i .. " (" .. math.ceil(5.0 - elapsed) .. "s)"
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Padlock " .. i .. " (" .. math.ceil(delayItem - elapsed) .. "s)"
                             task.wait(0.1)
                             elapsed = elapsed + 0.1
                         end
@@ -244,7 +245,7 @@ task.spawn(function()
                                 triggerInteraction(exitObj)
                             end
                             
-                            -- Delay 17 detik di portal
+                            -- Delay portal TETAP 17 detik untuk semua stage
                             local elapsed = 0
                             while elapsed < 17.0 do
                                 if not getgenv().AutoSpectral then break end
