@@ -16,7 +16,7 @@ local areas = {
     {prefix = "BellGallery", name = "Bell Gallery"},
     {prefix = "ClockGallery", name = "Clock Gallery"},
     {prefix = "RootGarden", name = "Root Garden"},
-    {prefix = "CoilLabyrinth", name = "Coil Labyrinth"}, -- Mulai Stage 8
+    {prefix = "CoilLabyrinth", name = "Coil Labyrinth"}, -- Index 8 (Stage 8)
     {prefix = "WatchfulArchive", name = "Watchful Archive"},
     {prefix = "PrisonHeart", name = "Prison Heart"},
     {prefix = "LostSands", name = "Lost Sands"},
@@ -78,7 +78,15 @@ local function getPosition(obj)
     if obj:IsA("BasePart") then
         return obj.Position
     elseif obj:IsA("Model") then
-        return obj:GetPivot().Position
+        local success, pivot = pcall(function() return obj:GetPivot().Position end)
+        if success and pivot then
+            return pivot
+        elseif obj.PrimaryPart then
+            return obj.PrimaryPart.Position
+        else
+            local part = obj:FindFirstChildWhichIsA("BasePart", true)
+            if part then return part.Position end
+        end
     end
     return nil
 end
@@ -126,20 +134,21 @@ task.spawn(function()
                 for index, area in ipairs(areas) do
                     if not getgenv().AutoSpectral then break end
                     
-                    -- Menentukan durasi jeda item berdasarkan stage (Index 1 sampai 7 = 2 detik, Index 8 ke atas = 5 detik)
                     local delayItem = (index <= 7) and 2.0 or 5.0
                     
                     for i = 1, 5 do
                         if not getgenv().AutoSpectral then break end
                         
                         local namaKunci = area.prefix .. "_Key" .. i
-                        local namaPadlock = area.prefix .. "_Padlock" .. i
+                        local namaPadlock = area.prefix .. "_Key" .. i -- (Placeholder aman)
+                        namaPadlock = area.prefix .. "_Padlock" .. i
                         
                         -- 1. PROSES KUNCI
                         local kunciBerhasil = false
                         local percobaanKunci = 0
+                        local maxPercobaan = (i == 3) and 5 or 3
                         
-                        while not kunciBerhasil and getgenv().AutoSpectral and percobaanKunci < 3 do
+                        while not kunciBerhasil and getgenv().AutoSpectral and percobaanKunci < maxPercobaan do
                             percobaanKunci = percobaanKunci + 1
                             statusLabel.Text = "[" .. area.name .. "] Key " .. i .. " (Coba " .. percobaanKunci .. ")"
                             
@@ -148,9 +157,15 @@ task.spawn(function()
                                 local posKunci = getPosition(kunciObj)
                                 if posKunci then
                                     pcall(function()
-                                        hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
+                                        -- KHUSUS STAGE 8 KE ATAS (TERUTAMA KUNCI 3): Berikan sedikit elevasi tinggi (Y + 5) 
+                                        -- agar karakter tidak langsung tertanam di dalam tembok/lantai pembatas
+                                        local tinggiTP = (index >= 8 and i == 3) and 6 or 3
+                                        hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, tinggiTP, 0))
                                     end)
-                                    task.wait(index <= 7 and 0.3 or 0.6)
+                                    
+                                    -- Waktu tunggu ekstra khusus stage 8+ kunci ke-3 agar game tidak mendeteksi noclip instan
+                                    local waitTime = (index >= 8 and i == 3) and 1.0 or (index <= 7 and 0.3 or 0.6)
+                                    task.wait(waitTime)
                                     
                                     triggerInteraction(kunciObj)
                                     pcall(function()
@@ -162,17 +177,17 @@ task.spawn(function()
                                     if not kunciObj.Parent or not kunciObj:IsDescendantOf(Workspace) then
                                         kunciBerhasil = true
                                     else
-                                        task.wait(0.5)
+                                        task.wait(0.6)
                                     end
                                 end
                             else
-                                task.wait(0.5)
+                                task.wait(0.8)
                             end
                         end
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- Jeda dinamis (2 detik untuk stage 1-7, 5 detik untuk stage 8+)
+                        -- Jeda dinamis setelah kunci
                         local elapsed = 0
                         while elapsed < delayItem do
                             if not getgenv().AutoSpectral then break end
@@ -196,7 +211,8 @@ task.spawn(function()
                                 local posPadlock = getPosition(padlockObj)
                                 if posPadlock then
                                     pcall(function()
-                                        hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 3, 0))
+                                        local tinggiTPPadlock = (index >= 8 and i == 3) and 6 or 3
+                                        hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, tinggiTPPadlock, 0))
                                     end)
                                     task.wait(index <= 7 and 0.3 or 0.6)
                                     
@@ -215,7 +231,6 @@ task.spawn(function()
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- Jeda dinamis untuk padlock
                         elapsed = 0
                         while elapsed < delayItem do
                             if not getgenv().AutoSpectral then break end
@@ -245,7 +260,6 @@ task.spawn(function()
                                 triggerInteraction(exitObj)
                             end
                             
-                            -- Delay portal TETAP 17 detik untuk semua stage
                             local elapsed = 0
                             while elapsed < 17.0 do
                                 if not getgenv().AutoSpectral then break end
@@ -263,7 +277,7 @@ task.spawn(function()
                 statusLabel.Text = "Status: Semua Area Selesai!"
             else
                 statusLabel.Text = "Error: Karakter tidak ditemukan!"
-                task.wait(1)
+                    task.wait(1)
             end
         end
     end
