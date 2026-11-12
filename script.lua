@@ -84,17 +84,22 @@ local function getPosition(obj)
 end
 
 local function triggerInteraction(obj)
+    local success = false
     local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
     if prompt then
-        fireproximityprompt(prompt)
-        return true
+        pcall(function()
+            fireproximityprompt(prompt)
+            success = true
+        end)
     end
     local click = obj:FindFirstChildWhichIsA("ClickDetector", true)
     if click then
-        fireclickdetector(click)
-        return true
+        pcall(function()
+            fireclickdetector(click)
+            success = true
+        end)
     end
-    return false
+    return success
 end
 
 toggleBtn.MouseButton1Click:Connect(function()
@@ -127,73 +132,95 @@ task.spawn(function()
                         local namaKunci = area.prefix .. "_Key" .. i
                         local namaPadlock = area.prefix .. "_Padlock" .. i
                         
-                        -- 1. PROSES KUNCI
-                        statusLabel.Text = "[" .. area.name .. "] Cari: Key " .. i
-                        local kunciObj = Workspace:FindFirstChild(namaKunci, true)
+                        -- 1. PROSES KUNCI (DENGAN SISTEM ULANG / RETRY)
+                        local kunciBerhasil = false
+                        local percobaanKunci = 0
                         
-                        if kunciObj then
-                            local posKunci = getPosition(kunciObj)
-                            if posKunci and getgenv().AutoSpectral then
-                                statusLabel.Text = "[" .. area.name .. "] TP Key " .. i
-                                pcall(function()
-                                    hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
-                                end)
-                                
-                                task.wait(0.4)
-                                
-                                if getgenv().AutoSpectral then
+                        while not kunciBerhasil and getgenv().AutoSpectral and percobaanKunci < 4 do
+                            percobaanKunci = percobaanKunci + 1
+                            statusLabel.Text = "[" .. area.name .. "] Key " .. i .. " (Coba " .. percobaanKunci .. ")"
+                            
+                            local kunciObj = Workspace:FindFirstChild(namaKunci, true)
+                            if kunciObj then
+                                local posKunci = getPosition(kunciObj)
+                                if posKunci then
+                                    pcall(function()
+                                        hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
+                                    end)
+                                    task.wait(0.4)
+                                    
                                     triggerInteraction(kunciObj)
                                     pcall(function()
                                         firetouchinterest(hrp, kunciObj, 0)
                                         task.wait(0.1)
                                         firetouchinterest(hrp, kunciObj, 1)
                                     end)
+                                    
+                                    -- Cek apakah objeknya masih ada (jika sudah hilang/diambil, berarti sukses)
+                                    if not kunciObj.Parent or not kunciObj:IsDescendantOf(Workspace) then
+                                        kunciBerhasil = true
+                                    else
+                                        -- Jika masih ada, tunggu sebentar lalu coba lagi
+                                        task.wait(0.5)
+                                    end
                                 end
-                                
-                                local elapsed = 0
-                                while elapsed < 5.0 do
-                                    if not getgenv().AutoSpectral then break end
-                                    statusLabel.Text = "[" .. area.name .. "] Jeda Key " .. i .. " (" .. math.ceil(5.0 - elapsed) .. "s)"
-                                    task.wait(0.1)
-                                    elapsed = elapsed + 0.1
-                                end
+                            else
+                                task.wait(0.5)
                             end
-                        else
-                            statusLabel.Text = namaKunci .. " tdk ada!"
-                            task.wait(1)
                         end
                         
                         if not getgenv().AutoSpectral then break end
                         
-                        -- 2. PROSES PADLOCK
-                        statusLabel.Text = "[" .. area.name .. "] Cari: Padlock " .. i
-                        local padlockObj = Workspace:FindFirstChild(namaPadlock, true)
+                        -- Jeda 5 detik setelah kunci sukses/selesai dicoba
+                        local elapsed = 0
+                        while elapsed < 5.0 do
+                            if not getgenv().AutoSpectral then break end
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Key " .. i .. " (" .. math.ceil(5.0 - elapsed) + 0 .. "s)"
+                            task.wait(0.1)
+                            elapsed = elapsed + 0.1
+                        end
                         
-                        if padlockObj then
-                            local posPadlock = getPosition(padlockObj)
-                            if posPadlock and getgenv().AutoSpectral then
-                                statusLabel.Text = "[" .. area.name .. "] TP Padlock " .. i
-                                pcall(function()
-                                    hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 3, 0))
-                                end)
-                                
-                                task.wait(0.4)
-                                
-                                if getgenv().AutoSpectral then
+                        if not getgenv().AutoSpectral then break end
+                        
+                        -- 2. PROSES PADLOCK (DENGAN SISTEM ULANG / RETRY)
+                        local padlockBerhasil = false
+                        local percobaanPadlock = 0
+                        
+                        while not padlockBerhasil and getgenv().AutoSpectral and percobaanPadlock < 4 do
+                            percobaanPadlock = percobaanPadlock + 1
+                            statusLabel.Text = "[" .. area.name .. "] Padlock " .. i .. " (Coba " .. percobaanPadlock .. ")"
+                            
+                            local padlockObj = Workspace:FindFirstChild(namaPadlock, true)
+                            if padlockObj then
+                                local posPadlock = getPosition(padlockObj)
+                                if posPadlock then
+                                    pcall(function()
+                                        hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 3, 0))
+                                    end)
+                                    task.wait(0.4)
+                                    
                                     triggerInteraction(padlockObj)
+                                    
+                                    if not padlockObj.Parent or not padlockObj:IsDescendantOf(Workspace) then
+                                        padlockBerhasil = true
+                                    else
+                                        task.wait(0.5)
+                                    end
                                 end
-                                
-                                local elapsed = 0
-                                while elapsed < 5.0 do
-                                    if not getgenv().AutoSpectral then break end
-                                    statusLabel.Text = "[" .. area.name .. "] Jeda Padlock " .. i .. " (" .. math.ceil(5.0 - elapsed) .. "s)"
-                                    task.wait(0.1)
-                                    elapsed = elapsed + 0.1
-                                end
+                            else
+                                task.wait(0.5)
                             end
-                        else
-                            statusLabel.Text = namaPadlock .. " tdk ada!"
-                            task.wait(1)
+                        end
+                        
+                        if not getgenv().AutoSpectral then break end
+                        
+                        -- Jeda 5 detik setelah padlock selesai
+                        elapsed = 0
+                        while elapsed < 5.0 do
+                            if not getgenv().AutoSpectral then break end
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Padlock " .. i .. " (" .. math.ceil(5.0 - elapsed) .. "s)"
+                            task.wait(0.1)
+                            elapsed = elapsed + 0.1
                         end
                         
                         if not getgenv().AutoSpectral then break end
@@ -217,7 +244,7 @@ task.spawn(function()
                                 triggerInteraction(exitObj)
                             end
                             
-                            -- Delay teleport ke portal diubah menjadi 17 detik
+                            -- Delay 17 detik di portal
                             local elapsed = 0
                             while elapsed < 17.0 do
                                 if not getgenv().AutoSpectral then break end
