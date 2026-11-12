@@ -6,6 +6,7 @@ local player = Players.LocalPlayer
 local playerGui = player.PlayerGui or player:WaitForChild("PlayerGui")
 getgenv().AutoFarmFull = false
 
+-- Daftar Full Stage
 local areas = {
     {prefix = "SpectralPrison", name = "Spectral Prison"},
     {prefix = "SteamworksPrison", name = "Steamworks Prison"},
@@ -14,6 +15,9 @@ local areas = {
     {prefix = "BellGallery", name = "Bell Gallery"},
     {prefix = "ClockGallery", name = "Clock Gallery"},
     {prefix = "RootGarden", name = "Root Garden"},
+    {prefix = "SunkenArchives", name = "Sunken Archives"}, -- Stage 8
+    {prefix = "GildedHalls", name = "Gilded Halls"},       -- Stage 9
+    {prefix = "AbyssalSanctum", name = "Abyssal Sanctum"}, -- Stage 10
 }
 
 if playerGui:FindFirstChild("AutoFarmFullGui") then
@@ -42,7 +46,7 @@ local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 35)
 statusLabel.Position = UDim2.new(0, 10, 0, 10)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle (Siap Lobi & Farm)"
+statusLabel.Text = "Status: Idle (Delay Stage 8+ = 10s)"
 statusLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 12
@@ -80,95 +84,12 @@ local function triggerInteraction(obj)
     if click then pcall(function() fireclickdetector(click) end) end
 end
 
--- Fungsi otomatisasi lobi (TP ke 601, 4, 322 -> Setup PartyUI -> CreateParty -> StartNow)
-local function runLobbySetup()
-    local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    statusLabel.Text = "Lobi: TP ke koordinat (601, 4, 322)..."
-    pcall(function()
-        hrp.CFrame = CFrame.new(601, 4, 322)
-    end)
-    task.wait(1.5)
-
-    -- Cari trigger / proximity prompt di sekitar lobi atau interaksi area
-    statusLabel.Text = "Lobi: Berinteraksi dengan area..."
-    for _, obj in ipairs(Workspace:GetDescendants()) do
-        if not getgenv().AutoFarmFull then break end
-        local nameLower = string.lower(obj.Name)
-        if nameLower:find("create") or nameLower:find("party") or nameLower:find("gate") then
-            local pos = getPosition(obj)
-            if pos and (pos - hrp.Position).Magnitude < 15 then
-                triggerInteraction(obj)
-                pcall(function()
-                    firetouchinterest(hrp, obj, 0)
-                    task.wait(0.1)
-                    firetouchinterest(hrp, obj, 1)
-                end)
-            end
-        end
-    end
-    task.wait(1.0)
-
-    -- Mengatur PartyUI (Difficulty Easy, Players 1, Monster 3) berdasarkan struktur Dex
-    statusLabel.Text = "Lobi: Mengatur Easy, 1 Player, 3 Monsters..."
-    local partyUI = playerGui:FindFirstChild("PartyUI")
-    if partyUI then
-        -- Cari tombol-tombol terkait pengaturan di dalam Fields / Body / CreateWindow
-        for _, descendant in ipairs(partyUI:GetDescendants()) do
-            if not getgenv().AutoFarmFull then break end
-            if descendant:IsA("TextButton") or descendant:IsA("ImageButton") then
-                local textLower = string.lower(descendant.Text or "")
-                local nameLower = string.lower(descendant.Name)
-                
-                if textLower:find("easy") or textLower:find("1") or textLower:find("solo") or textLower:find("3") or
-                   nameLower:find("easy") or nameLower:find("1") or nameLower:find("solo") or nameLower:find("3") then
-                    pcall(function()
-                        if getconnections then
-                            for _, conn in ipairs(getconnections(descendant.MouseButton1Click)) do conn:Fire() end
-                            for _, conn in ipairs(getconnections(descendant.Activated)) do conn:Fire() end
-                        end
-                    end)
-                    task.wait(0.2)
-                end
-            end
-        end
-        
-        -- Klik CreateParty
-        statusLabel.Text = "Lobi: Mengklik Create Party..."
-        local createPartyBtn = partyUI:FindFirstChild("CreateParty", true)
-        if createPartyBtn and (createPartyBtn:IsA("GuiButton") or createPartyBtn:IsA("ImageButton")) then
-            pcall(function()
-                if getconnections then
-                    for _, conn in ipairs(getconnections(createPartyBtn.MouseButton1Click)) do conn:Fire() end
-                    for _, conn in ipairs(getconnections(createPartyBtn.Activated)) do conn:Fire() end
-                end
-            end)
-        end
-        task.wait(1.0)
-
-        -- Klik StartNow
-        statusLabel.Text = "Lobi: Mengklik Start Now..."
-        local startNowBtn = partyUI:FindFirstChild("StartNow", true)
-        if startNowBtn and (startNowBtn:IsA("GuiButton") or startNowBtn:IsA("ImageButton")) then
-            pcall(function()
-                if getconnections then
-                    for _, conn in ipairs(getconnections(startNowBtn.MouseButton1Click)) do conn:Fire() end
-                    for _, conn in ipairs(getconnections(startNowBtn.Activated)) do conn:Fire() end
-                end
-            end)
-        end
-    end
-    task.wait(2.0)
-end
-
 toggleBtn.MouseButton1Click:Connect(function()
     getgenv().AutoFarmFull = not getgenv().AutoFarmFull
     if getgenv().AutoFarmFull then
         toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 127)
         toggleBtn.Text = "AUTO SCRIPT: ON"
-        statusLabel.Text = "Status: Memulai Lobi..."
+        statusLabel.Text = "Status: Memulai Auto Farm..."
     else
         toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
         toggleBtn.Text = "AUTO SCRIPT: OFF"
@@ -180,19 +101,23 @@ task.spawn(function()
     while true do
         task.wait(0.2)
         if getgenv().AutoFarmFull then
-            -- Jalankan setup lobi terlebih dahulu
-            runLobbySetup()
-            
-            if not getgenv().AutoFarmFull then break end
-            statusLabel.Text = "Status: Memulai Auto Farm Stage 1-7..."
-            
-            -- Proses Auto Farm Stage 1-7
             local character = player.Character
             local hrp = character and character:FindFirstChild("HumanoidRootPart")
             
             if hrp then
                 for index, area in ipairs(areas) do
                     if not getgenv().AutoFarmFull then break end
+                    
+                    -- Jika index >= 8 (Stage 8 ke atas), berikan delay 10 detik
+                    if index >= 8 then
+                        local delayElapsed = 0
+                        while delayElapsed < 10.0 do
+                            if not getgenv().AutoFarmFull then break end
+                            statusLabel.Text = "Delay Stage 8+ (" .. math.ceil(10.0 - delayElapsed) .. "s)..."
+                            task.wait(0.1)
+                            delayElapsed = delayElapsed + 0.1
+                        end
+                    end
                     
                     for i = 1, 5 do
                         if not getgenv().AutoFarmFull then break end
@@ -235,7 +160,7 @@ task.spawn(function()
                         
                         if not getgenv().AutoFarmFull then break end
                         
-                        -- 2. Proses Padlock (Tanpa jeda dari Key ke Padlock)
+                        -- 2. Proses Padlock (Tanpa jeda dari Kunci)
                         local padlockBerhasil = false
                         local percobaanPadlock = 0
                         
@@ -278,7 +203,7 @@ task.spawn(function()
                             task.wait(0.4)
                             if getgenv().AutoFarmFull then triggerInteraction(exitObj) end
                             
-                            -- Jeda portal aman 17 detik
+                            -- Jeda portal 17 detik
                             local elapsed = 0
                             while elapsed < 17.0 do
                                 if not getgenv().AutoFarmFull then break end
@@ -290,8 +215,8 @@ task.spawn(function()
                     end
                 end
                 
-                -- Selesai Stage 7 -> Rejoin Otomatis
-                statusLabel.Text = "Selesai Stage 7 -> Rejoin..."
+                -- Selesai Full Stage -> Rejoin Otomatis
+                statusLabel.Text = "Selesai Full Stage -> Rejoin..."
                 task.wait(1)
                 pcall(function() TeleportService:Teleport(game.PlaceId, player) end)
                 getgenv().AutoFarmFull = false
