@@ -46,7 +46,7 @@ local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 35)
 statusLabel.Position = UDim2.new(0, 10, 0, 10)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle (Delay Item = 2s)"
+statusLabel.Text = "Status: Idle (Item Delay: 2s & 10s)"
 statusLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 12
@@ -108,18 +108,8 @@ task.spawn(function()
                 for index, area in ipairs(areas) do
                     if not getgenv().AutoFarmFull then break end
                     
-                    -- Delay 10 detik untuk Stage 8 ke atas
-                    if index >= 8 then
-                        local delayElapsed = 0
-                        while delayElapsed < 10.0 do
-                            if not getgenv().AutoFarmFull then break end
-                            statusLabel.Text = "Delay Stage 8+ (" .. math.ceil(10.0 - delayElapsed) .. "s)..."
-                            task.wait(0.1)
-                            delayElapsed = delayElapsed + 0.1
-                        end
-                    end
-                    
-                    local delayItem = 2.0 -- Jeda 2 detik setelah Key dan Padlock
+                    -- Tentukan delay item: Stage 8+ jadi 10 detik, Stage 1-7 jadi 2 detik
+                    local delayItem = (index >= 8) and 10.0 or 2.0
                     
                     for i = 1, 5 do
                         if not getgenv().AutoFarmFull then break end
@@ -162,7 +152,7 @@ task.spawn(function()
                         
                         if not getgenv().AutoFarmFull then break end
                         
-                        -- Jeda 2 detik setelah Kunci
+                        -- Jeda setelah Kunci (2s atau 10s)
                         local elapsed = 0
                         while elapsed < delayItem do
                             if not getgenv().AutoFarmFull then break end
@@ -202,7 +192,7 @@ task.spawn(function()
                         
                         if not getgenv().AutoFarmFull then break end
                         
-                        -- Jeda 2 detik setelah Padlock
+                        -- Jeda setelah Padlock (2s atau 10s)
                         elapsed = 0
                         while elapsed < delayItem do
                             if not getgenv().AutoFarmFull then break end
