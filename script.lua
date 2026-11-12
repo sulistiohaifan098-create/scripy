@@ -28,7 +28,7 @@ if playerGui:FindFirstChild("MultiAreaAutoGui") then
     playerGui.MultiAreaAutoGui:Destroy()
 end
 
--- Membuat UI & Label Status (Langsung ke PlayerGui agar aman)
+-- Membuat UI & Label Status
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MultiAreaAutoGui"
 screenGui.ResetOnSpawn = false
@@ -37,7 +37,7 @@ screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 240, 0, 125)
-mainFrame.Position = UDim2.new(0.5, -120, 0.2, 0) -- Di tengah agak ke atas
+mainFrame.Position = UDim2.new(0.5, -120, 0.2, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -136,15 +136,18 @@ task.spawn(function()
                             if posKunci and getgenv().AutoSpectral then
                                 statusLabel.Text = "[" .. area.name .. "] TP Key " .. i
                                 pcall(function()
-                                    hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 4, 0))
+                                    hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
                                 end)
                                 
-                                task.wait(0.2)
+                                -- Jeda sedikit lebih stabil agar game mendeteksi posisi dan sentuhan kunci
+                                task.wait(0.4)
                                 
                                 if getgenv().AutoSpectral then
                                     triggerInteraction(kunciObj)
                                     pcall(function()
+                                        -- Mengulang firetouchinterest beberapa kali agar kunci pasti terambil
                                         firetouchinterest(hrp, kunciObj, 0)
+                                        task.wait(0.1)
                                         firetouchinterest(hrp, kunciObj, 1)
                                     end)
                                 end
@@ -173,10 +176,10 @@ task.spawn(function()
                             if posPadlock and getgenv().AutoSpectral then
                                 statusLabel.Text = "[" .. area.name .. "] TP Padlock " .. i
                                 pcall(function()
-                                    hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 4, 0))
+                                    hrp.CFrame = CFrame.new(posPadlock + Vector3.new(0, 3, 0))
                                 end)
                                 
-                                task.wait(0.2)
+                                task.wait(0.4)
                                 
                                 if getgenv().AutoSpectral then
                                     triggerInteraction(padlockObj)
@@ -208,18 +211,19 @@ task.spawn(function()
                         if posExit and getgenv().AutoSpectral then
                             statusLabel.Text = "TP ke " .. exitName
                             pcall(function()
-                                hrp.CFrame = CFrame.new(posExit + Vector3.new(0, 4, 0))
+                                hrp.CFrame = CFrame.new(posExit + Vector3.new(0, 3, 0))
                             end)
                             
-                            task.wait(0.2)
+                            task.wait(0.4)
                             if getgenv().AutoSpectral then
                                 triggerInteraction(exitObj)
                             end
                             
+                            -- Delay teleport ke portal diubah menjadi 13 detik
                             local elapsed = 0
-                            while elapsed < 5.0 do
+                            while elapsed < 13.0 do
                                 if not getgenv().AutoSpectral then break end
-                                statusLabel.Text = "Portal " .. area.name .. " (" .. math.ceil(5.0 - elapsed) .. "s)"
+                                statusLabel.Text = "Portal " .. area.name .. " (" .. math.ceil(13.0 - elapsed) .. "s)"
                                 task.wait(0.1)
                                 elapsed = elapsed + 0.1
                             end
