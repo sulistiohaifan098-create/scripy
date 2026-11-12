@@ -46,7 +46,7 @@ local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 35)
 statusLabel.Position = UDim2.new(0, 10, 0, 10)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle (Delay Stage 8+ = 10s)"
+statusLabel.Text = "Status: Idle (Delay Item = 2s)"
 statusLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 12
@@ -108,7 +108,7 @@ task.spawn(function()
                 for index, area in ipairs(areas) do
                     if not getgenv().AutoFarmFull then break end
                     
-                    -- Jika index >= 8 (Stage 8 ke atas), berikan delay 10 detik
+                    -- Delay 10 detik untuk Stage 8 ke atas
                     if index >= 8 then
                         local delayElapsed = 0
                         while delayElapsed < 10.0 do
@@ -118,6 +118,8 @@ task.spawn(function()
                             delayElapsed = delayElapsed + 0.1
                         end
                     end
+                    
+                    local delayItem = 2.0 -- Jeda 2 detik setelah Key dan Padlock
                     
                     for i = 1, 5 do
                         if not getgenv().AutoFarmFull then break end
@@ -160,7 +162,18 @@ task.spawn(function()
                         
                         if not getgenv().AutoFarmFull then break end
                         
-                        -- 2. Proses Padlock (Tanpa jeda dari Kunci)
+                        -- Jeda 2 detik setelah Kunci
+                        local elapsed = 0
+                        while elapsed < delayItem do
+                            if not getgenv().AutoFarmFull then break end
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Key " .. i .. " (" .. math.ceil(delayItem - elapsed) .. "s)"
+                            task.wait(0.1)
+                            elapsed = elapsed + 0.1
+                        end
+                        
+                        if not getgenv().AutoFarmFull then break end
+                        
+                        -- 2. Proses Padlock
                         local padlockBerhasil = false
                         local percobaanPadlock = 0
                         
@@ -185,6 +198,17 @@ task.spawn(function()
                             else
                                 task.wait(0.3)
                             end
+                        end
+                        
+                        if not getgenv().AutoFarmFull then break end
+                        
+                        -- Jeda 2 detik setelah Padlock
+                        elapsed = 0
+                        while elapsed < delayItem do
+                            if not getgenv().AutoFarmFull then break end
+                            statusLabel.Text = "[" .. area.name .. "] Jeda Padlock " .. i .. " (" .. math.ceil(delayItem - elapsed) .. "s)"
+                            task.wait(0.1)
+                            elapsed = elapsed + 0.1
                         end
                         
                         if not getgenv().AutoFarmFull then break end
