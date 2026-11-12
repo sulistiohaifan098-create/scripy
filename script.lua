@@ -139,13 +139,11 @@ task.spawn(function()
                                     hrp.CFrame = CFrame.new(posKunci + Vector3.new(0, 3, 0))
                                 end)
                                 
-                                -- Jeda sedikit lebih stabil agar game mendeteksi posisi dan sentuhan kunci
                                 task.wait(0.4)
                                 
                                 if getgenv().AutoSpectral then
                                     triggerInteraction(kunciObj)
                                     pcall(function()
-                                        -- Mengulang firetouchinterest beberapa kali agar kunci pasti terambil
                                         firetouchinterest(hrp, kunciObj, 0)
                                         task.wait(0.1)
                                         firetouchinterest(hrp, kunciObj, 1)
@@ -219,11 +217,11 @@ task.spawn(function()
                                 triggerInteraction(exitObj)
                             end
                             
-                            -- Delay teleport ke portal diubah menjadi 13 detik
+                            -- Delay teleport ke portal diubah menjadi 17 detik
                             local elapsed = 0
-                            while elapsed < 13.0 do
+                            while elapsed < 17.0 do
                                 if not getgenv().AutoSpectral then break end
-                                statusLabel.Text = "Portal " .. area.name .. " (" .. math.ceil(13.0 - elapsed) .. "s)"
+                                statusLabel.Text = "Portal " .. area.name .. " (" .. math.ceil(17.0 - elapsed) .. "s)"
                                 task.wait(0.1)
                                 elapsed = elapsed + 0.1
                             end
