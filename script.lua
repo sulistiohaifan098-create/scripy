@@ -46,7 +46,7 @@ local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 35)
 statusLabel.Position = UDim2.new(0, 10, 0, 10)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Status: Idle (Item Delay: 2s & 10s)"
+statusLabel.Text = "Status: Idle (Fixed Key/Padlock TP)"
 statusLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 12
@@ -84,6 +84,36 @@ local function triggerInteraction(obj)
     if click then pcall(function() fireclickdetector(click) end) end
 end
 
+-- Fungsi pencarian fleksibel untuk Kunci, Padlock, dan Portal
+local function findTargetObject(prefix, keyword, index)
+    -- 1. Coba cari dengan format standar baku
+    local targetName = prefix .. "_" .. keyword .. index
+    local obj = Workspace:FindFirstChild(targetName, true)
+    if obj then return obj end
+    
+    -- 2. Jika tidak ketemu, cari secara fleksibel berdasarkan kata kunci di Workspace
+    for _, item in ipairs(Workspace:GetDescendants()) do
+        local nameLower = string.lower(item.Name)
+        local prefixLower = string.lower(prefix)
+        if nameLower:find(prefixLower) and nameLower:find(string.lower(keyword)) then
+            -- Jika ada angka index-nya atau cocok
+            if nameLower:find(tostring(index)) or not item:IsA("Model") then
+                return item
+            end
+        end
+    end
+    
+    -- 3. Fallback terakhir: cari objek apa saja yang mengandung keyword di Workspace
+    for _, item in ipairs(Workspace:GetDescendants()) do
+        local nameLower = string.lower(item.Name)
+        if nameLower == string.lower(keyword) or nameLower:find(string.lower(keyword) .. tostring(index)) then
+            return item
+        end
+    end
+    
+    return nil
+end
+
 toggleBtn.MouseButton1Click:Connect(function()
     getgenv().AutoFarmFull = not getgenv().AutoFarmFull
     if getgenv().AutoFarmFull then
@@ -108,16 +138,12 @@ task.spawn(function()
                 for index, area in ipairs(areas) do
                     if not getgenv().AutoFarmFull then break end
                     
-                    -- Tentukan delay item: Stage 8+ jadi 10 detik, Stage 1-7 jadi 2 detik
                     local delayItem = (index >= 8) and 10.0 or 2.0
                     
                     for i = 1, 5 do
                         if not getgenv().AutoFarmFull then break end
                         
-                        local namaKunci = area.prefix .. "_Key" .. i
-                        local namaPadlock = area.prefix .. "_Padlock" .. i
-                        
-                        -- 1. Proses Kunci
+                        -- 1. Proses Kunci dengan pencarian fleksibel
                         local kunciBerhasil = false
                         local percobaanKunci = 0
                         local maxPercobaan = (i == 3) and 5 or 3
@@ -126,7 +152,7 @@ task.spawn(function()
                             percobaanKunci = percobaanKunci + 1
                             statusLabel.Text = "[" .. area.name .. "] Key " .. i .. " (Coba " .. percobaanKunci .. ")"
                             
-                            local kunciObj = Workspace:FindFirstChild(namaKunci, true)
+                            local kunciObj = findTargetObject(area.prefix, "Key", i)
                             if kunciObj then
                                 local posKunci = getPosition(kunciObj)
                                 if posKunci then
@@ -146,7 +172,7 @@ task.spawn(function()
                                     end
                                 end
                             else
-                                task.wait(0.3)
+                                task.wait(0.4)
                             end
                         end
                         
@@ -163,7 +189,7 @@ task.spawn(function()
                         
                         if not getgenv().AutoFarmFull then break end
                         
-                        -- 2. Proses Padlock
+                        -- 2. Proses Padlock dengan pencarian fleksibel
                         local padlockBerhasil = false
                         local percobaanPadlock = 0
                         
@@ -171,7 +197,7 @@ task.spawn(function()
                             percobaanPadlock = percobaanPadlock + 1
                             statusLabel.Text = "[" .. area.name .. "] Padlock " .. i .. " (Coba " .. percobaanPadlock .. ")"
                             
-                            local padlockObj = Workspace:FindFirstChild(namaPadlock, true)
+                            local padlockObj = findTargetObject(area.prefix, "Padlock", i)
                             if padlockObj then
                                 local posPadlock = getPosition(padlockObj)
                                 if posPadlock then
@@ -186,7 +212,7 @@ task.spawn(function()
                                     end
                                 end
                             else
-                                task.wait(0.3)
+                                task.wait(0.4)
                             end
                         end
                         
@@ -205,14 +231,18 @@ task.spawn(function()
                     end
                     
                     if not getgenv().AutoFarmFull then break end
-                    local exitName = area.prefix .. "_ExitPortal"
-                    statusLabel.Text = "Cari " .. exitName
-                    local exitObj = Workspace:FindFirstChild(exitName, true)
+                    
+                    -- Cari Exit Portal
+                    statusLabel.Text = "Cari Portal di " .. area.name
+                    local exitObj = findTargetObject(area.prefix, "ExitPortal", "")
+                    if not exitObj then
+                        exitObj = findTargetObject(area.prefix, "Portal", "")
+                    end
                     
                     if exitObj then
                         local posExit = getPosition(exitObj)
                         if posExit and getgenv().AutoFarmFull then
-                            statusLabel.Text = "TP ke " .. exitName
+                            statusLabel.Text = "TP ke Portal " .. area.name
                             pcall(function() hrp.CFrame = CFrame.new(posExit + Vector3.new(0, 3, 0)) end)
                             task.wait(0.4)
                             if getgenv().AutoFarmFull then triggerInteraction(exitObj) end
@@ -226,6 +256,9 @@ task.spawn(function()
                                 elapsed = elapsed + 0.1
                             end
                         end
+                    else
+                        statusLabel.Text = "Portal " .. area.name .. " tidak ditemukan, lanjut..."
+                        task.wait(2.0)
                     end
                 end
                 
